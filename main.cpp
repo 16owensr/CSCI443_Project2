@@ -3,7 +3,6 @@
 #include <vector>
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
 #include <ctime>
 #include <math.h>
 #include <fstream>
@@ -12,107 +11,131 @@ using namespace std;
 #define GRAPH_VERTICES 10
 #define MAX_WEIGHT 20
 
-
 // each vertex tracks which vertices it's connected to, the weight of each corresponding edge, and the number of connected vertices
 struct vertex
 {
-	int connected_vertices[GRAPH_VERTICES];
-	int connected_vertices_weights[GRAPH_VERTICES];
-	int connected_vertices_count;
+	vertex * connected_vertices[GRAPH_VERTICES]; // vertices connected to this one
+	int connected_vertices_weights[GRAPH_VERTICES]; // corresponding weights for vertex connections
+	int connected_vertices_count; // number of connections
+	int id; // ID number for vertex
 };
 
-int main()
+class totalGraph
 {
-	int connections, connected_vertex, weight, exit_value;
-	bool flag;
-	vertex vertices[GRAPH_VERTICES];
-	time_t begin;
-	struct tm begin_tm;
-	ofstream out_file;
-	out_file.open("results.txt");
-	time(&begin);
-	localtime_s(&begin_tm, &begin);
-	srand(begin_tm.tm_yday * 90000000 + begin_tm.tm_hour * 60 * 60 + begin_tm.tm_min * 60 + begin_tm.tm_sec);
+public:
 
-	// initialize the count of connected vertices for each vertex
+	vertex * graph[GRAPH_VERTICES]; // an aray of vertices for the whole graph
+	totalGraph(); // constructor to make a random graph
+
+	bool isGraphConnected(); // check if the graph is fully connected
+	void connected(bool *found_vertices); // used by isGraphConnected to check what vertices are connected to the partition given by found_vertices array
+
+};
+
+totalGraph::totalGraph()
+{
+
+	// initialize the vertices in the graph
 	for (int i = 0; i < GRAPH_VERTICES; i++)
 	{
-		vertices[i].connected_vertices_count = 0;
+		graph[i] = new vertex; // make a new vertex
+		graph[i]->connected_vertices_count = 0; // has 0 connections
+		graph[i]->id = i; // assign id
 	}
 
-	for (int i = 0; i < GRAPH_VERTICES; i++) // for each vertex
+	while (!isGraphConnected())
 	{
-		connections = rand()%(GRAPH_VERTICES-1)+1; // determine number of connected vertices
-		if (vertices[i].connected_vertices_count < connections) // if it doesn't already have enough connected vertices
+		for (int i = 0; i < GRAPH_VERTICES; i++)
 		{
-			for (int j = vertices[i].connected_vertices_count; j < connections; j++) // for each connected vertex
+
+			int connections = rand() % (GRAPH_VERTICES - 1) + 1; // determine number of connected vertices
+			vertex * current_vertex = graph[i]; // for easier naming/assignment
+
+			cout << "Vertex " << i << " wll have " << connections << " connections." << endl;
+
+			// for all connections not made
+			for (int j = current_vertex->connected_vertices_count; j < connections; j++)
 			{
-				flag = false;
-				while (flag == false)
+				vertex * connected_vertex = graph[rand() % GRAPH_VERTICES]; // a vertex to connect to
+
+				bool found = false;
+				// while vertex is already connected to or is itself
+				while (!found || connected_vertex->id == current_vertex->id)
 				{
-					flag = true; // assume a valid connected vertex is found
-					//determine the vertex number
-					connected_vertex = rand() % GRAPH_VERTICES;
-					if (connected_vertex == i) // if the vertex is itself
-					{
-						flag = false;
-					}
-					else // check the list of vertices it is already connected to
-					{
-						for (int k = 0; k < j; k++)
-						{
-							if (connected_vertex == vertices[i].connected_vertices[k]) // if the vertex is already listed for this vertex
-								flag = false;
-						}
-					}
+					found = true; // assume a valid connected vertex is found
+					connected_vertex = graph[rand() % GRAPH_VERTICES];
+					for (int k = 0; k < current_vertex->connected_vertices_count; k++)
+						if (connected_vertex->id == current_vertex->connected_vertices[k]->id)
+							found = false;
 				}
-				// assign the value of the connected vertex
-				vertices[i].connected_vertices[j] = connected_vertex;
-				//determine the weight of the connecting edge
-				weight = rand() % MAX_WEIGHT + 1;
-				/*//check the connected vertex to see if it already lists that it connects to the current vertex
-				flag = false; // assume the connected edge is not already listed as being connected
-				for (int l = 0; l < vertices[connected_vertex].connected_vertices_count; l++)
-				{
-					if (vertices[connected_vertex].connected_vertices[l] == i)
-					{
-						flag = true;
-						weight = vertices[connected_vertex].connected_vertices_weights[l];
-					}
-				}*/
-				//assign weight to edge
-				vertices[i].connected_vertices_weights[j] = weight;
-				//increment the connected_vertices_count 
-				vertices[i].connected_vertices_count++;
-				vertices[connected_vertex].connected_vertices[vertices[connected_vertex].connected_vertices_count] = i;
-				vertices[connected_vertex].connected_vertices_weights[vertices[connected_vertex].connected_vertices_count] = weight;
-				vertices[connected_vertex].connected_vertices_count++;
-				//the following is for troubleshooting to check the status of the vertices each time through the for loop
-				/*out_file << "__________________________\n";
-				for (int m = 0; m < GRAPH_VERTICES; m++)
-				{
-					out_file << "vertex: " << m << endl;
-					for (int n = 0; n < vertices[m].connected_vertices_count; n++)
-					{
-						out_file << "    " << vertices[m].connected_vertices[n] << ":" << vertices[m].connected_vertices_weights[n] << endl;
-					}
-				}*/
+
+				// Output the connection
+				cout << "Connecting vertex " << i << " and " << connected_vertex->id << endl;
+
+				// connect the vertices together since this is a undirected graph
+				current_vertex->connected_vertices[current_vertex->connected_vertices_count] = connected_vertex;
+				connected_vertex->connected_vertices[connected_vertex->connected_vertices_count] = current_vertex;
+
+				// add weight to the edge
+				int weight = rand() % MAX_WEIGHT + 1;
+				current_vertex->connected_vertices_weights[current_vertex->connected_vertices_count++] = weight;
+				connected_vertex->connected_vertices_weights[connected_vertex->connected_vertices_count++] = weight;
 			}
 		}
 	}
+	// Check if the graph is connected
+	if (isGraphConnected())
+		cout << "Graph is connected" << endl;
+}
 
-	for (int m = 0; m < GRAPH_VERTICES; m++)
-	{
-		out_file << "vertex: " << m << endl;
-		for (int n = 0; n < vertices[m].connected_vertices_count; n++)
-		{
-			out_file << "    " << vertices[m].connected_vertices[n] << ":" << vertices[m].connected_vertices_weights[n] << endl;
-		}
-	}
+void totalGraph::connected(bool *found_vertices)
+{
+	for (int i = 0; i < GRAPH_VERTICES; i++)
+		// if the vertex is already found
+		if (found_vertices[i])
+			for (int j = 0; j < graph[i]->connected_vertices_count; j++)
+				// if the vertex has not already been reached, mark it as reached
+				if (!found_vertices[graph[i]->connected_vertices[j]->id])
+					found_vertices[graph[i]->connected_vertices[j]->id] = true;
+}
+
+
+
+bool totalGraph::isGraphConnected()
+{
+	// Start with 1 found vertex
+	bool found_vertices[GRAPH_VERTICES];
+	for (int i = 0; i < GRAPH_VERTICES; i++)
+		found_vertices[i] = false;
+
+	found_vertices[0] = true;
+
+	// connect all vertices that are connected to vertices already found
+	// this only needs to run GRAPH_VERTICES times as its impossible a vertex to be farther away and still connected
+	for (int i = 0; i < GRAPH_VERTICES; i++)
+		connected(found_vertices);
+
+	// Check if any vertex was not found
+	for (int i = 0; i < GRAPH_VERTICES; i++)
+		if (!found_vertices[i])
+			return false;
+
+	return true;
+}
+
+int main()
+{
+	ofstream out_file;
+	out_file.open("results.txt");
+
+	// This is all you need torandomly seed based on time
+	srand(time(NULL));
+
+	totalGraph base;
 	out_file.close();
 	//the following lines are needed to keep the terminal open until you want the program to end when running from visual studio
-	cout << "exiting...";
-	cin >> exit_value;
+	// cout << "exiting...";
+	// cin >> exit_value;
 	return 0;
 }
 
