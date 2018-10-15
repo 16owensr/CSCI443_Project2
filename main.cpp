@@ -20,19 +20,19 @@ struct vertex
 	int id; // ID number for vertex
 };
 
-class totalGraph
+class baseGraph
 {
 public:
 
 	vertex * graph[GRAPH_VERTICES]; // an aray of vertices for the whole graph
-	totalGraph(); // constructor to make a random graph
+	baseGraph(); // constructor to make a random graph
 
 	bool isGraphConnected(); // check if the graph is fully connected
 	void connected(bool *found_vertices); // used by isGraphConnected to check what vertices are connected to the partition given by found_vertices array
 
 };
 
-totalGraph::totalGraph()
+baseGraph::baseGraph()
 {
 
 	// initialize the vertices in the graph
@@ -88,7 +88,7 @@ totalGraph::totalGraph()
 		cout << "Graph is connected" << endl;
 }
 
-void totalGraph::connected(bool *found_vertices)
+void baseGraph::connected(bool *found_vertices)
 {
 	for (int i = 0; i < GRAPH_VERTICES; i++)
 		// if the vertex is already found
@@ -101,7 +101,7 @@ void totalGraph::connected(bool *found_vertices)
 
 
 
-bool totalGraph::isGraphConnected()
+bool baseGraph::isGraphConnected()
 {
 	// Start with 1 found vertex
 	bool found_vertices[GRAPH_VERTICES];
@@ -131,7 +131,7 @@ int main()
 	// This is all you need torandomly seed based on time
 	srand(time(NULL));
 
-	totalGraph base;
+	baseGraph base;
 	out_file.close();
 	//the following lines are needed to keep the terminal open until you want the program to end when running from visual studio
 	// cout << "exiting...";
